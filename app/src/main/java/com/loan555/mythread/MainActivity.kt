@@ -11,7 +11,7 @@ import kotlinx.android.synthetic.main.activity_main.*
 class MainActivity : AppCompatActivity() {
     var count: Int = 0
     var lastEvent: Int = 0
-    var maxThreadResetCount : Int = 0
+    var maxThreadResetCount: Int = 0
     var dem: Int = 0
 
     //0 : ko cos sk nao
@@ -33,7 +33,7 @@ class MainActivity : AppCompatActivity() {
                 when (msg.what) {
                     1002 -> {
                         text.setText(msg.arg1.toString())
-                        if (msg.arg1 % 50 == 0) {
+                        if (msg.arg1 % 100 == 0) {
                             var color: Int =
                                 Color.rgb((0..255).random(), (0..255).random(), (0..255).random())
                             text.setTextColor(color)
@@ -42,7 +42,7 @@ class MainActivity : AppCompatActivity() {
                     1001 -> {
                         when (msg.arg1) {
                             0 -> {
-                                Log.d("aaa","lastState vua thay doi ne")
+                                Log.d("aaa", "lastState vua thay doi ne")
 //                                doResetCount()
                             }
                         }
@@ -102,7 +102,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 MotionEvent.ACTION_UP -> {
                     lastEvent = 0
-                    var message= Message()
+                    var message = Message()
                     message.what = 1001
                     message.arg1 = lastEvent
                     mHandler.sendMessage(message)
@@ -127,18 +127,36 @@ class MainActivity : AppCompatActivity() {
                         if (y > dY) {
                             lastEvent = -1
                             Log.d("aaa", "move  $y /$dY giam")
-                            doReduceOne()
+                            doReduceOneOne()
                         } else if (y < dY) {
                             lastEvent = 1
                             Log.d("aaa", "move  $y tang")
-                            doIncreaseOne()
+                            doIncreaseOneOne()
                         }
                         dY = y
                     }
                     MotionEvent.ACTION_UP -> {
                         Log.d("aaa", "up ")
                         lastEvent = 0
-                        doResetCount()
+                        var threadResetOne = Thread(Runnable {
+                            maxThreadResetCount++
+                            var idReset = maxThreadResetCount
+                            Thread.sleep(1000)
+                            while (lastEvent == 0 && count != 0 && idReset == maxThreadResetCount) {
+                                if (count < 0) count++
+                                else count--
+                                var message = Message()
+                                message.what = 1002
+                                message.arg1 = count
+                                mHandler.sendMessage(message)
+                                Log.d(
+                                    "aaa",
+                                    "SumThread: ${Thread.activeCount()} -${Thread.currentThread().name}--count = $count"
+                                )
+                                Thread.sleep(50)
+                            }
+                        })
+                        threadResetOne.start()
                     }
                 }
                 return v?.onTouchEvent(event) ?: true
@@ -162,7 +180,7 @@ class MainActivity : AppCompatActivity() {
             threadAddOne.start()
             threadAddOne.join()
             var threadResetOne = Thread(Runnable {
-                maxThreadResetCount ++
+                maxThreadResetCount++
                 var idReset = maxThreadResetCount
                 Thread.sleep(2000)
                 while (lastEvent == 1 && count != 0 && idReset == maxThreadResetCount) {
@@ -200,55 +218,72 @@ class MainActivity : AppCompatActivity() {
         threadAddMore.start()
     }
 
-    fun doReduceOne() {
-//        if (lastEvent == -1) {
-//            var threadAddOne = Thread(Runnable {
-//                count--
-//                var message = Message()
-//                message.what = 1002
-//                message.arg1 = count
-//                mHandler.sendMessage(message)
-//                Log.d(
-//                    "aaa", "SumThread: ${Thread.activeCount()} ----count = $count"
-//                )
-//            })
-//            threadAddOne.start()
-//        }
-
-
-    if (lastEvent == -1) {
-        var threadSubOne = Thread(Runnable {
-            count--
-            var message = Message()
-            message.what = 1002
-            message.arg1 = count
-            mHandler.sendMessage(message)
-            Log.d(
-                "aaa", "SumThread: ${Thread.activeCount()} ----count = $count"
-            )
-        })
-        threadSubOne.start()
-        threadSubOne.join()
-        var threadResetOne = Thread(Runnable {
-            maxThreadResetCount ++
-            var idReset = maxThreadResetCount
-            Thread.sleep(2000)
-            while (lastEvent == -1 && count != 0 && idReset == maxThreadResetCount) {
-                if (count < 0) count++
-                else count--
+    fun doIncreaseOneOne() {
+        if (lastEvent == 1) {
+            var threadAddOne = Thread(Runnable {
+                count++
                 var message = Message()
                 message.what = 1002
                 message.arg1 = count
                 mHandler.sendMessage(message)
                 Log.d(
-                    "aaa",
-                    "SumThread: ${Thread.activeCount()} -${Thread.currentThread().name}--count = $count"
+                    "aaa", "SumThread: ${Thread.activeCount()} ----count = $count"
                 )
-                Thread.sleep(50)
-            }
-        })
-        threadResetOne.start()
+            })
+            threadAddOne.start()
+        }
     }
+
+    fun doReduceOneOne() {
+        if (lastEvent == -1) {
+            var threadAddOne = Thread(Runnable {
+                count--
+                var message = Message()
+                message.what = 1002
+                message.arg1 = count
+                mHandler.sendMessage(message)
+                Log.d(
+                    "aaa", "SumThread: ${Thread.activeCount()} ----count = $count"
+                )
+            })
+            threadAddOne.start()
+        }
+    }
+
+    fun doReduceOne() {
+        if (lastEvent == -1) {
+            var threadSubOne = Thread(Runnable {
+                count--
+                var message = Message()
+                message.what = 1002
+                message.arg1 = count
+                mHandler.sendMessage(message)
+                Log.d(
+                    "aaa", "SumThread: ${Thread.activeCount()} ----count = $count"
+                )
+            })
+            threadSubOne.start()
+            threadSubOne.join()
+            var threadResetOne = Thread(Runnable {
+                maxThreadResetCount++
+                var idReset = maxThreadResetCount
+                Thread.sleep(2000)
+                while (lastEvent == -1 && count != 0 && idReset == maxThreadResetCount) {
+                    if (count < 0) count++
+                    else count--
+                    var message = Message()
+                    message.what = 1002
+                    message.arg1 = count
+                    mHandler.sendMessage(message)
+                    Log.d(
+                        "aaa",
+                        "SumThread: ${Thread.activeCount()} -${Thread.currentThread().name}--count = $count"
+                    )
+                    Thread.sleep(50)
+                }
+            })
+            threadResetOne.start()
+        }
     }
 
     fun doReduceMore() {
@@ -272,7 +307,7 @@ class MainActivity : AppCompatActivity() {
         if (lastEvent == 0) {
             var threadResetCount = Thread(Runnable {
                 Thread.sleep(2000)
-                while (lastEvent == 0 && count != 0 ) {
+                while (lastEvent == 0 && count != 0) {
                     if (count < 0) count++
                     else count--
                     var message = Message()
@@ -290,11 +325,12 @@ class MainActivity : AppCompatActivity() {
             threadResetCount.start()
         }
     }
-    fun resetOne(){
+
+    fun resetOne() {
         if (lastEvent == 1) {
             var threadResetCount = Thread(Runnable {
                 Thread.sleep(2000)
-                while (lastEvent == 1 && count != 0 ) {
+                while (lastEvent == 1 && count != 0) {
                     if (count < 0) count++
                     else count--
                     var message = Message()
